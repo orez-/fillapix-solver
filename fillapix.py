@@ -10,6 +10,13 @@ clear = '\x1b[0m'
 BLACK = 0
 GRAY = 8
 WHITE = 15
+YELLOW = 3
+GREEN = 2
+RED = 1
+MAGENTA = 5
+CYAN = 6
+SALMON = 9
+LIMEGREEN = 10
 
 UNKNOWN = object()
 YES = object()
@@ -25,6 +32,8 @@ class Board(object):
         ]
         self.filled = [[UNKNOWN for _ in row] for row in numbers]
 
+        self.highlight = {}
+
     def __iter__(self):
         for row in zip(self.numbers, self.filled):
             yield zip(*row)
@@ -34,18 +43,18 @@ class Board(object):
         """
         Get TTY color formatted string.
         """
-        i = 0
         output = []
-        for row in self:
-            for number, filled in row:
+        for y, row in enumerate(self):
+            for x, (number, filled) in enumerate(row):
                 if filled is UNKNOWN:
                     output.append((af + ab).format(BLACK, WHITE))
                 elif filled is YES:
                     output.append((af + ab).format(WHITE, BLACK))
                 elif filled is NO:
                     output.append((af + ab).format(BLACK, GRAY))
-                i += 1
-                output.append(str(number) if number is not None else ' ')
+                if (x, y) in self.highlight:
+                    output.append(af.format(self.highlight[(x, y)]))
+                output.append(str(number) if number is not None else '.')
                 output.append(clear)
             output.append('\n')
         return ''.join(output)
@@ -62,6 +71,11 @@ class Board(object):
                 count += 1
                 self.filled[oy][ox] = value
         return count
+
+    def fill(self, coords, value):
+        for x, y in coords:
+            assert self.filled[y][x] is UNKNOWN, self.filled[y][x]
+            self.filled[y][x] = value
 
     def surrounding_stats(self, coord):
         stats = collections.Counter(
@@ -155,6 +169,78 @@ def solve(board):
                         if board.fill_around((large_x, large_y), YES, exclude=shared):
                             progress = True
 
+def solve2(board):
+    # Preprocess 'numbers' into 'zones'.
+    known_areas = {}
+    for y, row in enumerate(board):
+        for x, (number, _) in enumerate(row):
+            if number is None:
+                continue
+            tiles = board.surrounding_tiles((x, y))
+            known_areas[frozenset(tiles)] = number
+
+    progress = True
+    while progress:
+        progress = False
+        for tiles, number in known_areas.items():
+            del known_areas[tiles]
+
+            # Bookkeeping.
+            new_number = number
+            new_tiles = set()
+
+            for x, y in tiles:
+                filled = board.filled[y][x]
+                if filled is YES:
+                    new_number -= 1
+                elif filled is UNKNOWN:
+                    new_tiles.add((x, y))
+                elif filled is not NO:
+                    raise AssertionError(filled)
+            del number
+            del tiles
+
+            if new_number == len(new_tiles):
+                board.fill(new_tiles, YES)
+                progress = True
+                continue
+
+            if new_number == 0:
+                board.fill(new_tiles, NO)
+                progress = True
+                continue
+
+            # CHECK THE OVERLAP
+            for otiles, onumber in known_areas.items():
+                overlap = frozenset(otiles & new_tiles)
+                if not overlap:
+                    continue
+                new_tiles_overlap = frozenset(new_tiles - overlap)
+                otiles_overlap = frozenset(otiles - overlap)
+                # find the upper and lower bounds for each that can fit in the overlap.
+                omax = min(len(overlap), onumber, new_number)
+                omin = max(
+                    onumber - len(otiles_overlap),
+                    new_number - len(new_tiles_overlap),
+                    0,
+                )
+                if omin == omax:
+                    known_areas[overlap] = omax
+                    known_areas[new_tiles_overlap] = new_number - omax
+                    known_areas[otiles_overlap] = onumber - omax
+
+            known_areas[frozenset(new_tiles)] = new_number
+
+def highlight(tiles, color, wait=False):
+    for t in tiles:
+        board.highlight[t] = color
+    if not wait:
+        show_highlight()
+
+def show_highlight():
+    print(board.tty)
+    board.highlight = {}
+    raw_input()
 
 if __name__ == '__main__':
     # raw_board = [
@@ -207,5 +293,5 @@ if __name__ == '__main__':
         " 6  4 4  3 3  0  0 0",
     ]
     board = Board(raw_board)
-    solve(board)
+    solve2(board)
     print(board.tty)
