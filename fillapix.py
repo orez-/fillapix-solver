@@ -134,42 +134,6 @@ class Board(object):
 
 
 def solve(board):
-    progress = True
-    while progress:
-        progress = False
-        for y, row in enumerate(board):
-            for x, (number, filled) in enumerate(row):
-                if number is None:
-                    continue
-                stats = board.surrounding_stats((x, y))
-                # Sufficient
-                if number == stats[YES]:
-                    if board.fill_around((x, y), NO):
-                        progress = True
-                    continue
-                # Necessary
-                if 9 - number == stats[NO]:
-                    if board.fill_around((x, y), YES):
-                        progress = True
-                    continue
-                # num shared + num difference = 9
-                for ox, oy in board.sharing_friends((x, y)):
-                    shared = list(board.shared((ox, oy), (x, y)))
-                    o_number = board.numbers[oy][ox]
-                    diff = abs(number - o_number)
-                    if len(shared) + diff == 9:
-                        if number < o_number:
-                            small_x, small_y = x, y
-                            large_x, large_y = ox, oy
-                        else:
-                            small_x, small_y = ox, oy
-                            large_x, large_y = x, y
-                        if board.fill_around((small_x, small_y), NO, exclude=shared):
-                            progress = True
-                        if board.fill_around((large_x, large_y), YES, exclude=shared):
-                            progress = True
-
-def solve2(board):
     # Preprocess 'numbers' into 'zones'.
     known_areas = {}
     for y, row in enumerate(board):
@@ -293,5 +257,5 @@ if __name__ == '__main__':
         " 6  4 4  3 3  0  0 0",
     ]
     board = Board(raw_board)
-    solve2(board)
+    solve(board)
     print(board.tty)
