@@ -133,7 +133,7 @@ class Board(object):
                 yield x, y
 
 
-def solve(board):
+def solve(board, show_steps=False):
     # Preprocess 'numbers' into 'zones'.
     known_areas = {}
     for y, row in enumerate(board):
@@ -166,11 +166,15 @@ def solve(board):
 
             if new_number == len(new_tiles):
                 board.fill(new_tiles, YES)
+                if show_steps and new_tiles:
+                    highlight(board, new_tiles, RED)
                 progress = True
                 continue
 
             if new_number == 0:
                 board.fill(new_tiles, NO)
+                if show_steps and new_tiles:
+                    highlight(board, new_tiles, RED)
                 progress = True
                 continue
 
@@ -195,13 +199,13 @@ def solve(board):
 
             known_areas[frozenset(new_tiles)] = new_number
 
-def highlight(tiles, color, wait=False):
+def highlight(board, tiles, color, flush=False):
     for t in tiles:
         board.highlight[t] = color
-    if not wait:
-        show_highlight()
+    if not flush:
+        show_highlight(board)
 
-def show_highlight():
+def show_highlight(board):
     print(board.tty)
     board.highlight = {}
     raw_input()
@@ -224,37 +228,54 @@ if __name__ == '__main__':
     #     "  777 7  0",
     #     " 56  64   ",
     # ]
+    # raw_board = [
+    #     " 4543     2 2  334  ",
+    #     "      3 3  3     5 4",
+    #     "1  4 4 5 43 35  1  4",
+    #     " 3  3 334  33 44    ",
+    #     "2 2 343   343    1  ",
+    #     "   5  2 443324     5",
+    #     "  466    4  2 4 3 7 ",
+    #     "0   7  0  43 3      ",
+    #     "  67    24  5 3 57  ",
+    #     "       3 5 6 333 8 6",
+    #     " 6  76  3    3    7 ",
+    #     "  8  6  146      6  ",
+    #     "    6 200 66   3    ",
+    #     " 6 7 53   6  4   5 5",
+    #     "  7 54 3 44 2   6   ",
+    #     "    5        35   6 ",
+    #     "56  6 65 5 35  466 4",
+    #     "46   45   6   63 5  ",
+    #     "  6  2   4   3     4",
+    #     "2 5   3 4   3  463  ",
+    #     "  4 24  65 3 45     ",
+    #     "  30   3 4 2 3  6  3",
+    #     "4    4    1      4 3",
+    #     "4 113 2 23  2 4464 3",
+    #     "      22 2 2        ",
+    #     "   2   122   23  44 ",
+    #     "4 2 10  1  1 4   3 0",
+    #     "   1  3  4  3 33    ",
+    #     "6             3     ",
+    #     " 6  4 4  3 3  0  0 0",
+    # ]
     raw_board = [
-        " 4543     2 2  334  ",
-        "      3 3  3     5 4",
-        "1  4 4 5 43 35  1  4",
-        " 3  3 334  33 44    ",
-        "2 2 343   343    1  ",
-        "   5  2 443324     5",
-        "  466    4  2 4 3 7 ",
-        "0   7  0  43 3      ",
-        "  67    24  5 3 57  ",
-        "       3 5 6 333 8 6",
-        " 6  76  3    3    7 ",
-        "  8  6  146      6  ",
-        "    6 200 66   3    ",
-        " 6 7 53   6  4   5 5",
-        "  7 54 3 44 2   6   ",
-        "    5        35   6 ",
-        "56  6 65 5 35  466 4",
-        "46   45   6   63 5  ",
-        "  6  2   4   3     4",
-        "2 5   3 4   3  463  ",
-        "  4 24  65 3 45     ",
-        "  30   3 4 2 3  6  3",
-        "4    4    1      4 3",
-        "4 113 2 23  2 4464 3",
-        "      22 2 2        ",
-        "   2   122   23  44 ",
-        "4 2 10  1  1 4   3 0",
-        "   1  3  4  3 33    ",
-        "6             3     ",
-        " 6  4 4  3 3  0  0 0",
+        "0   33    ",
+        "  3     4 ",
+        " 32  1 4  ",
+        "3 101  3 4",
+        "3 1 0 44  ",
+        "    33    ",
+        "3  4 3  65",
+        "  2       ",
+        "  2 3201 4",
+        " 3 23    3",
+        " 3    22  ",
+        "1 3 46    ",
+        "1 3  76 1 ",
+        "      7   ",
+        " 2334  4 0",
     ]
     board = Board(raw_board)
     solve(board)
